@@ -1,0 +1,6 @@
+C,Electronics,null
+C,Computers,Electronics
+P,Laptop,1200,10,5,Computers
+P,Smartphone,800,18,8,Computers
+C,Audio,Electronics
+P,Headphones,150,2,5,Audio
