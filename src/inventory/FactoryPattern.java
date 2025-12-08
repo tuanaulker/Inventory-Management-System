@@ -1,21 +1,31 @@
 package inventory;
 
 import inventory.CompositePattern.Product;
-
+import inventory.ElectronicProduct;
+import inventory.ApparelProduct;
 public class FactoryPattern {
 
     public interface IProductFactory {
         Product createProduct(String name, int price, int stock, int threshold);
     }
 
-    public static class ElectronicProductFactory implements IProductFactory {
+    public static class ElectronicProductFactory implements inventory.FactoryPattern.IProductFactory {
+        public ElectronicProductFactory() { /* compiled code */ }
+
         @Override
-        public Product createProduct(String name, int price, int stock, int threshold) {
-            // In a more complex scenario, this might return a subclass like ElectronicProduct
-            // But for this diagram, it returns Product (which is concrete).
-            // We can assume "Type B Product" from diagram maps to a specific configuration or subclass.
-            // Let's just return the standard Product for simplicity as it has all needed fields.
-            return new Product(name, price, stock, threshold);
+        public Product createProduct(java.lang.String name, int price, int stock, int threshold) {
+            int defaultWarranty = 12;
+            return new ElectronicProduct(name, price, stock, threshold, defaultWarranty);
+        }
+    }
+
+    public static class ApparelProductFactory implements inventory.FactoryPattern.IProductFactory {
+        public ApparelProductFactory() { /* compiled code */ }
+
+        @Override
+        public Product createProduct(java.lang.String name, int price, int stock, int threshold) {
+            String defaultSize = "M";
+            return new ApparelProduct(name, price, stock, threshold, defaultSize);
         }
     }
 }

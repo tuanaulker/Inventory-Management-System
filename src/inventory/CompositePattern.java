@@ -50,7 +50,7 @@ public class CompositePattern {
             return total;
         }
 
-        @Override
+       /* @Override
         public void registerObs(ObserverInterface obs) {
             // Delegate to children or ignore? 
             // Usually Composite doesn't hold observers for children, but for simplicity let's ignore or implement if needed.
@@ -62,7 +62,73 @@ public class CompositePattern {
         @Override
         public void removeObs(ObserverInterface obs) {
             // See above
+        }*/
+
+        @Override
+        public void registerObs(ObserverInterface obs) {
+            for (ProductComponent child : getChildren()) {
+                child.registerObs(obs);
+            }
         }
+
+        @Override
+        public void removeObs(ObserverInterface obs) {
+            for (ProductComponent child : getChildren()) {
+                child.removeObs(obs);
+            }
+        }
+
+        public Product findProductByName(String name) {
+            for (ProductComponent child : children) {
+                if (child instanceof Product) {
+                    Product p = (Product) child;
+                    if (p.getName().equalsIgnoreCase(name)) {
+                        return p;
+                    }
+                } else if (child instanceof ProductCategory) {
+                    Product found = ((ProductCategory) child).findProductByName(name);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
+
+        public List<Product> getAllLowStockProducts() {
+            List<Product> lowStockList = new ArrayList<>();
+            collectLowStockProducts(lowStockList);
+            return lowStockList;
+        }
+
+        private void collectLowStockProducts(List<Product> result) {
+            for (ProductComponent child : children) {
+                if (child instanceof Product) {
+                    Product p = (Product) child;
+                    String stateName = p.getState().getStateName();
+                    if (stateName.equals("LowStock") || stateName.equals("OutOfStock")) {
+                        result.add(p);
+                    }
+                } else if (child instanceof ProductCategory) {
+                    ((ProductCategory) child).collectLowStockProducts(result);
+                }
+            }
+        }
+
+        public List<Product> getAllProducts() {
+            List<Product> allProducts = new ArrayList<>();
+            collectAllProducts(allProducts);
+            return allProducts;
+        }
+
+        private void collectAllProducts(List<Product> result) {
+            for (ProductComponent child : children) {
+                if (child instanceof Product) {
+                    result.add((Product) child);
+                } else if (child instanceof ProductCategory) {
+                    ((ProductCategory) child).collectAllProducts(result);
+                }
+            }
+        }
+
     }
 
     public static class Product implements ProductComponent {
@@ -78,8 +144,7 @@ public class CompositePattern {
             this.price = price;
             this.stockLevel = stockLevel;
             this.threshold = threshold;
-            
-            // Initialize state based on stock
+
             if (stockLevel == 0) {
                 this.state = new OutOfStock();
             } else if (stockLevel < threshold) {
@@ -95,22 +160,23 @@ public class CompositePattern {
         public int getThreshold() { return threshold; }
         public State getState() { return state; }
 
-        public void setStockLevel(int newLevel) {
-            this.stockLevel = newLevel;
-            // State transition logic is handled in State.handleSale usually, 
-            // but if set manually, we might need to check state.
-            // For this implementation, we assume setStockLevel is called by State or Command.
-            // If called directly, we should probably re-evaluate state.
-            if (stockLevel == 0) {
-                setState(new OutOfStock());
-            } else if (stockLevel < threshold) {
-                setState(new LowStock());
-            } else if (state instanceof OutOfStock && stockLevel > 0) {
-                 // Recovering from out of stock
-                 setState(stockLevel < threshold ? new LowStock() : new InStock());
-            } else if (state instanceof LowStock && stockLevel >= threshold) {
-                setState(new InStock());
+        public void setStockLevel(int newStockLevel) {
+            this.stockLevel = newStockLevel;
+
+            State newState;
+            if (newStockLevel == 0) {
+                newState = new OutOfStock();
+            } else if (newStockLevel <= this.threshold) {
+                newState = new LowStock();
+            } else {
+                newState = new InStock();
             }
+
+            if (this.state.getClass() != newState.getClass()) {
+                this.state = newState;
+                System.out.println(this.name + " New State: " + newState.getClass().getSimpleName());
+            }
+            notifyObs();
         }
 
         public void setState(State newState) {
@@ -149,8 +215,26 @@ public class CompositePattern {
         }
         
         public void restock(int quantity) {
-            setStockLevel(this.stockLevel + quantity);
-            System.out.println("Restocked " + name + " by " + quantity + ". New Level: " + stockLevel);
+            state.handleRestock(this, quantity);
+        }
+
+        public void setThreshold(int threshold) {
+            this.threshold = threshold;
+            System.out.println("Updated threshold for " + name + " to " + threshold);
+
+            int current = this.stockLevel;
+            if (current == 0) {
+                setState(new OutOfStock());
+            } else if (current < threshold) {
+                setState(new LowStock());
+            } else {
+                setState(new InStock());
+            }
+        }
+
+        public void setPrice(int price) {
+            this.price = price;
+            System.out.println("Updated price for " + name + " to $" + price);
         }
     }
 }

@@ -10,9 +10,6 @@ public class Database {
 
     public static void save(ProductCategory root) {
         try (PrintWriter writer = new PrintWriter(new File(DB_FILE))) {
-            // We need to traverse and write. 
-            // To reconstruct hierarchy, we can write lines like: Type,Name,Price,Stock,Threshold,ParentName
-            // Root has no parent.
             writeRecursive(writer, root, "null");
             System.out.println("Database saved to " + DB_FILE);
         } catch (IOException e) {
@@ -23,15 +20,14 @@ public class Database {
     private static void writeRecursive(PrintWriter writer, ProductComponent component, String parentName) {
         if (component instanceof ProductCategory) {
             ProductCategory cat = (ProductCategory) component;
-            // Format: C,Name,ParentName
             writer.println("C," + cat.getName() + "," + parentName);
             for (ProductComponent child : cat.getChildren()) {
                 writeRecursive(writer, child, cat.getName());
             }
         } else if (component instanceof Product) {
             Product p = (Product) component;
-            // Format: P,Name,Price,Stock,Threshold,ParentName
-            writer.println("P," + p.getName() + "," + p.getPrice() + "," + p.getStockLevel() + "," + p.getThreshold() + "," + parentName);
+            String productType = p.getClass().getSimpleName();
+            writer.println("P," + p.getName() + "," + p.getPrice() + "," + p.getStockLevel() + "," + p.getThreshold() + "," + parentName + "," + productType);
         }
     }
 
@@ -43,7 +39,12 @@ public class Database {
 
         Map<String, ProductCategory> categories = new HashMap<>();
         ProductCategory root = null;
-        IProductFactory factory = new ElectronicProductFactory();
+
+        Map<String, IProductFactory> factories = new HashMap<>();
+        factories.put("ElectronicProduct", new ElectronicProductFactory());
+        factories.put("ApparelProduct", new ApparelProductFactory());
+
+        IProductFactory defaultFactory = new ElectronicProductFactory();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
@@ -51,12 +52,14 @@ public class Database {
                 String[] parts = line.split(",");
                 String type = parts[0];
                 String name = parts[1];
-                String parentName = parts[parts.length - 1];
+
+                if (parts.length < 5) continue;
 
                 if (type.equals("C")) {
+                    String parentName = parts[parts.length - 1];
                     ProductCategory cat = new ProductCategory(name);
                     categories.put(name, cat);
-                    
+
                     if (parentName.equals("null")) {
                         root = cat;
                     } else {
@@ -69,11 +72,11 @@ public class Database {
                     int price = Integer.parseInt(parts[2]);
                     int stock = Integer.parseInt(parts[3]);
                     int threshold = Integer.parseInt(parts[4]);
-                    
-                    Product p = factory.createProduct(name, price, stock, threshold);
-                    // Factory creates with default state logic, but we might need to ensure state is correct if we saved it?
-                    // The Product constructor sets state based on stock, so passing the saved stock is sufficient.
-                    
+
+                    String parentName = parts[5];
+                    String productType = (parts.length > 6) ? parts[6] : "ElectronicProduct";
+                    IProductFactory selectedFactory = factories.getOrDefault(productType, defaultFactory);
+                    Product p = selectedFactory.createProduct(name, price, stock, threshold);
                     ProductCategory parent = categories.get(parentName);
                     if (parent != null) {
                         parent.add(p);
@@ -81,7 +84,7 @@ public class Database {
                 }
             }
             return root;
-        } catch (IOException e) {
+        } catch (IOException | NumberFormatException e) {
             System.err.println("Error loading database: " + e.getMessage());
             return null;
         }

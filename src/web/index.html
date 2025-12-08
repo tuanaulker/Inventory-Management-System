@@ -96,10 +96,29 @@
                     </div>
 
                     <div class="border-t border-gray-100 pt-6">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Factory (Mock)</h4>
-                         <button onclick="alert('Factory Pattern: Logic to instantiate new Product would go here.')" class="w-full flex items-center justify-center gap-2 p-3 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-colors">
-                            <i data-lucide="box" size="16"></i>
-                            <span>Create Variant Type B</span>
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">New Item</h4>
+
+                        <select id="factory-selector" class="w-full p-2 border border-gray-300 rounded-lg mb-3 bg-white text-sm">
+                            <option value="">Select Product Type</option>
+                        </select>
+
+                        <select id="parent-category-selector" class="w-full p-2 border border-gray-300 rounded-lg mb-3 bg-white text-sm">
+                            <option value="">-Select Parent Category </option>
+                        </select>
+
+                        <input type="text" id="new-product-name" placeholder="Name" class="w-full p-2 border border-gray-300 rounded-lg mb-2 text-sm">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <input type="number" id="new-product-price" placeholder="Price" class="p-2 border border-gray-300 rounded-lg text-sm" value="100">
+                            <input type="number" id="new-product-stock" placeholder="Initial Stock" class="p-2 border border-gray-300 rounded-lg text-sm" value="10">
+                        </div>
+                        <input type="number" id="new-product-threshold" placeholder="Low Stock Threshold" class="w-full p-2 border border-gray-300 rounded-lg text-sm" value="5">
+
+                        <div id="factory-specific-input" class="mt-2 mb-4">
+                        </div>
+
+                        <button onclick="app.createProduct()" class="w-full flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors active:scale-95 shadow-md">
+                            <i data-lucide="plus-circle" size="16"></i>
+                            <span>Create New Product</span>
                         </button>
                     </div>
                 </div>
@@ -132,24 +151,24 @@
             constructor() {
                 // Initial Data (Composite Pattern structure)
                 // This will be replaced by data fetched from the server
-                this.inventory = []; 
+                this.inventory = [];
 
                 this.selectedProductId = null;
                 this.commandHistory = [];
                 this.notifications = [];
-                
+                this.productTypes = [];
                 this.init();
             }
 
             async init() {
                 await this.fetchInventory();
-                this.renderInventory();
-                this.renderControls();
-                this.renderLogs();
+                this.setupFactoryListener();
+                this.renderAll();
                 lucide.createIcons();
             }
 
             async fetchInventory() {
+                console.log("Fetch Inventory");
                 try {
                     const response = await fetch('/api/inventory');
                     this.inventory = await response.json();
@@ -198,10 +217,15 @@
                 if (!product) return;
 
                 const timestamp = new Date().toLocaleTimeString();
-                
-                // Send command to server
+
+                if (type === 'REMOVE_STOCK' && product.quantity === 0) {
+                    this.showAlarm('critical', `SALE FAILED: ${product.name} is Out of Stock.`);
+                    this.renderLogs();
+                    return;
+                }
+
                 try {
-                    const response = await fetch('/action', {
+                    const response = await fetch('/api/action', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
@@ -212,16 +236,16 @@
                     if (response.ok) {
                         // Refresh inventory from server to get updated state
                         await this.fetchInventory();
-                        
+
                         // Update local state for UI feedback (optional, as fetchInventory does it)
                         const updatedProduct = this.findProduct(this.selectedProductId);
                         let msg = "";
-                        
+
                         if (type === 'ADD_STOCK') {
                             msg = `Stock increased for ${product.name} by ${amount}`;
                         } else if (type === 'REMOVE_STOCK') {
                             msg = `Stock reduced for ${product.name} by ${amount}`;
-                            
+
                             // Check Alarm
                             if (updatedProduct.quantity === 0) {
                                 this.showAlarm('critical', `CRITICAL: ${product.name} is now OUT OF STOCK!`);
@@ -250,21 +274,62 @@
                 }
             }
 
-            undoLastCommand() {
-                // Implement undo logic if supported by backend
-                alert("Undo not yet implemented on backend for this GUI.");
+            async undoLastCommand() {
+                if (this.commandHistory.length === 0) {
+                    this.showAlarm('warning', 'Command History is empty. Nothing to undo.');
+                    return;
+                }
+                try {
+                    const response = await fetch('/api/action', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `type=undo`
+                    });
+                    const responseText = await response.text();
+                    let result = { success: false, message: responseText };
+
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (e) {
+                        if (responseText.includes("status\":\"success\"")) {
+                            result.success = true;
+                            result.message = "Undo successful (Stock change expected).";
+                        }
+                    }
+
+                    if (response.ok && result.status === "success") {
+                        const undoneCommand = this.commandHistory.shift();
+
+                        this.notifications.unshift({
+                            id: Date.now(),
+                            msg: `[UNDO] Last action (${undoneCommand.type}) reversed for ${undoneCommand.productName}.`,
+                            time: new Date().toLocaleTimeString()
+                        });
+
+                        this.showAlarm('info', 'Last Command Successfully Undone. Inventory refreshed.');
+                        await this.fetchInventory();
+                        this.renderAll();
+                    } else {
+                        this.showAlarm('error', `Undo Failed: ${result.message || 'Server rejected the undo action.'}`);
+                    }
+                } catch (error) {
+                    console.error('Error during undo command:', error);
+                    this.showAlarm('error', `Network error during undo.`);
+                }
             }
 
             showAlarm(type, message) {
                 const container = document.getElementById('alarm-container');
-                
+
                 // Clear existing alarms to prevent stacking
                 container.innerHTML = '';
 
                 const el = document.createElement('div');
                 const isCrit = type === 'critical';
                 const bg = isCrit ? 'bg-red-600' : 'bg-orange-500';
-                
+
                 el.className = `flex items-center gap-3 px-6 py-3 rounded-full shadow-2xl text-white ${bg} animate-slide-down pointer-events-auto mb-2`;
                 el.innerHTML = `
                     <i data-lucide="alert-circle" class="animate-pulse"></i>
@@ -273,7 +338,7 @@
                         <i data-lucide="x" size="16"></i>
                     </button>
                 `;
-                
+
                 container.appendChild(el);
                 lucide.createIcons();
 
@@ -289,6 +354,8 @@
                 this.renderInventory();
                 this.renderControls();
                 this.renderLogs();
+                this.renderCategorySelector();
+                this.renderFactorySelector();
                 lucide.createIcons();
             }
 
@@ -310,7 +377,7 @@
 
             renderCategoryHtml(cat, isRoot = false) {
                 const catVal = this.calculateCategoryValue(cat);
-                
+
                 let childrenHtml = '';
                 if (cat.children) {
                     childrenHtml = cat.children.map(child => {
@@ -360,7 +427,7 @@
             renderProductHtml(prod) {
                 const state = this.getProductState(prod.quantity, prod.threshold);
                 return `
-                    <div onclick="app.selectProduct('${prod.id}')" 
+                    <div onclick="app.selectProduct('${prod.id}')"
                             class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg hover:bg-blue-50 cursor-pointer transition-all shadow-sm">
                         <div class="flex items-center gap-3">
                             <div class="p-2 rounded-full ${state.bg} ${state.color}">
@@ -405,7 +472,7 @@
                 }
 
                 const product = this.findProduct(this.selectedProductId);
-                if (!product) return; 
+                if (!product) return;
 
                 empty.style.display = 'none';
                 active.style.display = 'block';
@@ -418,7 +485,7 @@
 
                 document.getElementById('detail-name').innerText = product.name;
                 document.getElementById('detail-qty').innerText = product.quantity;
-                
+
                 const badge = document.getElementById('detail-badge');
                 badge.className = `px-2 py-1 rounded text-xs font-bold ${state.bg} ${state.color}`;
                 badge.innerText = state.name;
@@ -427,7 +494,7 @@
             renderLogs() {
                 const container = document.getElementById('log-container');
                 const btn = document.getElementById('undo-btn');
-                
+
                 // Toggle Undo Button
                 btn.disabled = this.commandHistory.length === 0;
 
@@ -443,8 +510,156 @@
                     </div>
                 `).join('');
             }
-        }
 
+            collectCategoryNames(list = this.inventory, names = []) {
+                const items = Array.isArray(list) ? list : [list];
+                for (const item of items) {
+                    if (item.type === 'category') {
+                        names.push(item.name);
+                        if (item.children) {
+                            this.collectCategoryNames(item.children, names);
+                        }
+                    }
+                }
+                return names;
+            }
+
+            renderCategorySelector() {
+                const selector = document.getElementById('parent-category-selector');
+                const categories = this.collectCategoryNames();
+
+                selector.innerHTML = '<option value="">Select Parent Category</option>';
+                categories.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.innerText = name;
+                    selector.appendChild(option);
+                });
+            }
+
+            fetchProductTypes() {
+                try {
+                    const response = fetch('/api/product-types');
+                    if (response.ok) {
+                        this.productTypes = response.json();
+                    } else {
+                        console.error('API Error fetching product types:', response.status);
+                        this.productTypes = ["Electronic", "Apparel"];
+                    }
+                } catch (error) {
+                    console.error('Network or Parse Error fetching product types', error);
+                }
+            }
+
+            renderFactorySelector() {
+                const selector = document.getElementById('factory-selector');
+
+                selector.innerHTML = '<option value="">Select Product Type</option>';
+                if(this.productTypes.length === 0){
+                    this.productTypes = ["Electronic", "Apparel"];
+                }
+                this.productTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.innerText = type + ' Product';
+                    selector.appendChild(option);
+                });
+                this.setupFactoryListener();
+            }
+
+            setupFactoryListener() {
+                const selector = document.getElementById('factory-selector');
+                selector.addEventListener('change', (e) => this.renderFactorySpecificInput(e.target.value));
+            }
+
+            renderFactorySpecificInput(productType) {
+                const container = document.getElementById('factory-specific-input');
+                container.innerHTML = '';
+
+                let html = '';
+                if (productType === 'Electronic') {
+                    html = `
+                        <input type="number" id="specific-warranty" placeholder="Warranty Months (e.g., 12)" class="w-full p-2 border border-gray-300 rounded-lg text-sm" value="12" required>
+                    `;
+                } else if (productType === 'Apparel') {
+                    html = `
+                        <input type="text" id="specific-size" placeholder="Size (e.g., M, XL)" class="w-full p-2 border border-gray-300 rounded-lg text-sm" value="L" required>
+                    `;
+                }
+                container.innerHTML = html;
+            }
+
+            async createProduct() {
+                const parentCategory = document.getElementById('parent-category-selector').value;
+                const type = document.getElementById('factory-selector').value;
+                const name = document.getElementById('new-product-name').value;
+
+                const priceInput = document.getElementById('new-product-price');
+                const stockInput = document.getElementById('new-product-stock');
+                const thresholdInput = document.getElementById('new-product-threshold');
+
+                const price = parseInt(priceInput.value);
+                const stock = parseInt(stockInput.value);
+                const threshold = parseInt(thresholdInput.value);
+
+                if (!parentCategory || !type || !name || isNaN(price) || isNaN(stock) || isNaN(threshold)) {
+                    this.showAlarm('error', 'Please ensure all Category, Type, Name, Price, Stock, and Threshold fields are valid numbers.');
+                    return;
+                }
+
+                let specificParam = '';
+                if (type === 'Electronic') {
+                    specificParam = document.getElementById('specific-warranty').value;
+                } else if (type === 'Apparel') {
+                    specificParam = document.getElementById('specific-size').value;
+                }
+
+                const formData = new URLSearchParams();
+                formData.append('type', 'create_product');
+                formData.append('parentCategory', parentCategory);
+                formData.append('productType', type);
+                formData.append('name', name);
+                formData.append('price', price.toString());
+                formData.append('stock', stock.toString());
+                formData.append('threshold', threshold.toString());
+                formData.append('specificParam', specificParam);
+
+                try {
+                    const response = await fetch('/api/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    });
+
+                    const responseText = await response.text();
+                    let result = { success: false, message: responseText };
+
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (e) {
+                        result.message = responseText.substring(0, 100) + '... (See console for full error)';
+                    }
+
+                    if (response.ok) {
+                        if (result.status === 'success') {
+                            this.showAlarm('info', `${name} created successfully using ${type} Factory.`);
+                            await this.fetchInventory();
+                            this.renderAll();
+                        } else {
+                            this.showAlarm('error', `Product creation failed: ${result.message || 'Server rejected the request (Logic Error).'}`);
+                            console.error('Backend Logic Error:', result);
+                        }
+                    } else {
+                        this.showAlarm('error', `Product creation failed. HTTP Status ${response.status}: ${result.message || 'Server returned an error status.'}`);
+                        console.error('HTTP Error:', response.status, responseText);
+                    }
+                } catch (error) {
+                    this.showAlarm('error', `Network error during product creation. Check Server Console.`);
+                    console.error('Network/Client Error:', error);
+                }
+            }
+
+        } // end of class inventory app
         // Init App
         const app = new InventoryApp();
 

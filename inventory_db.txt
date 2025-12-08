@@ -1,6 +1,11 @@
-C,Electronics,null
+C,Global Inventory,null
+C,Electronics,Global Inventory
 C,Computers,Electronics
-P,Laptop,1200,10,5,Computers
-P,Smartphone,800,18,8,Computers
+P,Laptop,1200,10,5,Computers,ElectronicProduct
+P,Smartphone,800,20,8,Computers,ElectronicProduct
 C,Audio,Electronics
-P,Headphones,150,2,5,Audio
+P,Headphones,150,2,5,Audio,ElectronicProduct
+P,asdasd,100,10,5,Electronics,ElectronicProduct
+C,Apparel,Global Inventory
+P,T-Shirt,30,15,5,Apparel,ApparelProduct
+P,Jeans,70,8,3,Apparel,ApparelProduct
