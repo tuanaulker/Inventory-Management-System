@@ -3,9 +3,11 @@ C,Electronics,Global Inventory
 C,Computers,Electronics
 P,Laptop,1200,10,5,Computers,ElectronicProduct
 P,Smartphone,800,20,8,Computers,ElectronicProduct
+P,Bigo's Macbook Pro,400,5,3,Computers,ElectronicProduct
 C,Audio,Electronics
 P,Headphones,150,2,5,Audio,ElectronicProduct
-P,asdasd,100,10,5,Electronics,ElectronicProduct
 C,Apparel,Global Inventory
-P,T-Shirt,30,15,5,Apparel,ApparelProduct
-P,Jeans,70,8,3,Apparel,ApparelProduct
+C,Clothing,Apparel
+P,T-Shirt,30,15,5,Clothing,ApparelProduct
+P,Jeans,70,8,3,Clothing,ApparelProduct
+C,Type1,Global Inventory

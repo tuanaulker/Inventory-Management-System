@@ -1,64 +1,81 @@
-# Inventory Management System - Design Patterns Demo
+# Inventory Management System
 
-This project demonstrates the implementation of several design patterns in a Java-based Inventory Management System, featuring a web-based dashboard.
+A robust, design-pattern-driven Inventory Management System featuring a hierarchical product structure, real-time web dashboard, and persistent storage.
 
-## Design Patterns Implemented
+## 🏗 Design Patterns Implemented
 
-1.  **State Pattern**: Manages the state of a product (`InStock`, `LowStock`, `OutOfStock`) based on inventory levels.
-2.  **Composite Pattern**: Organizes products into categories and hierarchies (`ProductCategory`, `Product`), allowing uniform treatment of individual objects and compositions.
-3.  **Observer Pattern**: Notifies the `InventoryManager` (Observer) when a `Product` (Subject) changes state.
-4.  **Command Pattern**: Encapsulates stock operations (`AddStock`, `RemoveStock`) as objects, supporting execution and undo functionality.
-5.  **Factory Pattern**: Provides an interface (`IProductFactory`) for creating product objects, decoupling client code from specific product instantiation.
+This project showcases the practical application of five key design patterns:
 
-## Project Structure
+1.  **Composite Pattern**: Structures the inventory as a tree hierarchy (`Type` -> `Category` -> `Product`), allowing individual products and categories to be treated uniformly.
+2.  **Factory Pattern**: Encapsulates product creation logic (`ElectronicProductFactory`, `ApparelProductFactory`), making it easy to introduce new product types.
+3.  **Observer Pattern**: Enables real-time updates. The `InventoryManager` observes products and triggers alerts or logs when stock levels change (e.g., Low Stock, Out of Stock).
+4.  **Command Pattern**: Encapsulates all inventory operations (Add Stock, Sell, Create Category, etc.) as command objects, enabling **Undo** functionality.
+5.  **State Pattern**: Manages product lifecycle states (`InStock`, `LowStock`, `OutOfStock`) dynamically based on quantity.
 
-The source code is located in `src/inventory/`.
+## 🚀 Features
 
-*   `SimpleWebServer.java`: A lightweight HTTP server providing a web dashboard.
-*   `Database.java`: Handles loading and saving inventory data to `inventory_db.txt`.
-*   `StatePattern.java`: Contains the `State` interface and concrete states.
-*   `CompositePattern.java`: Contains the `ProductComponent` interface, `ProductCategory`, and `Product`.
-*   `ObserverPattern.java`: Contains the `ObserverInterface` and `InventoryManager`.
-*   `CommandPattern.java`: Contains the `CommandInterface` and concrete commands.
-*   `FactoryPattern.java`: Contains the `IProductFactory` interface and `ElectronicProductFactory`.
-*   `Main.java`: A CLI entry point demonstrating the usage of all patterns.
+*   **Web-Based Dashboard**: A responsive GUI built with HTML/TailwindCSS to visualize the inventory tree.
+*   **Hierarchical Organization**: Organize products deeply into Types and Categories.
+*   **Stock Management**:
+    *   Add and Sell stock with custom quantities.
+    *   Automatic state transitions (e.g., product goes "Out of Stock" when quantity hits 0).
+    *   **Undo** the last operation.
+*   **Dynamic Creation**: Register new Product Types, Categories, and Products directly from the UI.
+*   **Validation**: Prevents duplicate categories and enforces valid naming conventions.
+*   **Persistence**: Automatically saves and loads inventory state from `inventory_db.txt`.
 
-## How to Run
+## 📂 Project Structure
+
+The source code is located in `src/inventory/`:
+
+*   **Core Logic**:
+    *   `Main.java`: Entry point for initialization and CLI demo.
+    *   `SimpleWebServer.java`: HTTP server handling API requests and serving the frontend.
+    *   `Database.java`: Manages file I/O for `inventory_db.txt`.
+*   **Pattern Implementations**:
+    *   `CompositePattern.java`: Defines `ProductComponent`, `ProductCategory`, and `Product`.
+    *   `FactoryPattern.java`: Defines factories for creating different product types.
+    *   `ObserverPattern.java`: Handles event notifications and logging.
+    *   `CommandPattern.java`: Implements the command execution and undo logic.
+    *   `StatePattern.java`: Defines the various states of a product.
+    *   `ElectronicProduct.java` / `ApparelProduct.java`: Concrete product implementations.
+
+## 🛠 How to Run
 
 ### Prerequisites
 *   Java Development Kit (JDK) 8 or higher.
+*   `gson-2.10.1.jar` (Included in `src/`).
 
-### 1. Compile the Project
-We use a `bin` directory to keep compiled classes separate from source code.
-
-```bash
-# Create bin directory if it doesn't exist
-mkdir -p bin
-
-# Compile all source files to the bin directory
-javac -d bin src/inventory/*.java
-```
-*Note: If you encounter errors related to JUnit (tests), you can exclude `FactoryTest.java` or ensure JUnit is in your classpath.*
-
-### 2. Run the Web Server (Recommended)
-The web server provides a visual interface to interact with the inventory.
+### Option 1: Quick Start (One-Liner)
+Run this command in your terminal to compile and start the server immediately:
 
 ```bash
-java -cp bin inventory.SimpleWebServer
-```
-Once started, open your browser and navigate to: **[http://localhost:8000](http://localhost:8000)**
-
-### 3. Run the CLI Demo
-To see a console-based demonstration of the patterns in action:
-
-```bash
-java -cp bin inventory.Main
+mkdir -p bin && javac -cp src/gson-2.10.1.jar -d bin src/inventory/*.java && echo "Starting Web Server..." && java -cp bin:src/gson-2.10.1.jar inventory.SimpleWebServer
 ```
 
-## Data Persistence
-The application stores inventory data in `inventory_db.txt`. This file is automatically loaded when the server starts and updated when changes are made.
+### Option 2: Manual Compilation
 
-## One Line Command to execute project
-```bash
-cd [FolderName] && mkdir -p bin && javac -d bin src/inventory/CommandPattern.java src/inventory/CompositePattern.java src/inventory/Database.java src/inventory/FactoryPattern.java src/inventory/Main.java src/inventory/ObserverPattern.java src/inventory/SimpleWebServer.java src/inventory/StatePattern.java && echo "Compilation successful. Starting Web Server..." && java -cp bin inventory.SimpleWebServer
-```
+1.  **Compile the project:**
+    ```bash
+    mkdir -p bin
+    javac -cp src/gson-2.10.1.jar -d bin src/inventory/*.java
+    ```
+
+2.  **Run the Web Server:**
+    ```bash
+    java -cp bin:src/gson-2.10.1.jar inventory.SimpleWebServer
+    ```
+    Access the dashboard at: **[http://localhost:8000](http://localhost:8000)**
+
+3.  **Run the CLI Demo:**
+    ```bash
+    java -cp bin:src/gson-2.10.1.jar inventory.Main
+    ```
+
+## 💾 Data Persistence
+The system maintains a local database file named `inventory_db.txt`.
+*   **Loading**: The application attempts to load this file on startup. If missing, it initializes a default inventory.
+*   **Saving**: Changes made via the web interface or CLI are automatically saved to this file.
+
+---
+*Developed for Design Patterns Course - Fall 2025*

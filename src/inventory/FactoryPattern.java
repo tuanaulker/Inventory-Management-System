@@ -28,4 +28,11 @@ public class FactoryPattern {
             return new ApparelProduct(name, price, stock, threshold, defaultSize);
         }
     }
+
+    public static class GenericProductFactory implements IProductFactory {
+        @Override
+        public Product createProduct(String name, int price, int stock, int threshold) {
+            return new Product(name, price, stock, threshold);
+        }
+    }
 }

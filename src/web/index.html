@@ -67,7 +67,7 @@
             <!-- Selected Product Actions -->
             <div class="p-6 flex-1 overflow-y-auto relative" id="control-panel">
                 <!-- Content injected via JS -->
-                <div id="empty-state" class="h-full flex flex-col items-center justify-center text-gray-400 text-center p-4">
+                <div id="empty-state" class="py-12 flex flex-col items-center justify-center text-gray-400 text-center p-4">
                     <i data-lucide="shopping-cart" size="48" class="mb-4 opacity-20"></i>
                     <p>Select a product from the dashboard to manage inventory.</p>
                 </div>
@@ -84,33 +84,69 @@
                     </div>
 
                     <!-- Buttons -->
-                    <div class="grid grid-cols-2 gap-4 mb-8">
-                        <button onclick="app.executeCommand('ADD_STOCK', 10)" class="flex items-center justify-center gap-2 p-4 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg shadow-green-200 transition-all active:scale-95">
-                            <i data-lucide="plus" size="20"></i>
-                            <span>Add Stock</span>
-                        </button>
-                        <button onclick="app.executeCommand('REMOVE_STOCK', 1)" class="flex items-center justify-center gap-2 p-4 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-200 transition-all active:scale-95">
-                            <i data-lucide="minus" size="20"></i>
-                            <span>Sell (1)</span>
-                        </button>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <!-- Add Stock Section -->
+                        <div class="flex flex-col gap-2">
+                            <input type="number" id="add-stock-amount" value="1" min="1" class="p-2 border border-gray-300 rounded-lg text-sm text-center" placeholder="Qty">
+                            <button onclick="app.executeCommand('ADD_STOCK', document.getElementById('add-stock-amount').value)" class="flex items-center justify-center gap-2 p-3 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg shadow-green-200 transition-all active:scale-95">
+                                <i data-lucide="plus" size="20"></i>
+                                <span>Add</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Sell Section -->
+                        <div class="flex flex-col gap-2">
+                            <input type="number" id="sell-stock-amount" value="1" min="1" class="p-2 border border-gray-300 rounded-lg text-sm text-center" placeholder="Qty">
+                            <button onclick="app.executeCommand('REMOVE_STOCK', document.getElementById('sell-stock-amount').value)" class="flex items-center justify-center gap-2 p-3 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-200 transition-all active:scale-95">
+                                <i data-lucide="minus" size="20"></i>
+                                <span>Sell</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="app.deleteProduct()" class="w-full flex items-center justify-center gap-2 p-3 bg-red-100 hover:bg-red-200 text-red-600 rounded-xl transition-all active:scale-95 mb-8">
+                        <i data-lucide="trash-2" size="18"></i>
+                        <span>Delete Product</span>
+                    </button>
+                </div>
+
+                <!-- Standalone Sections -->
+                <div class="px-4 pb-6">
+                    <!-- Tabs Navigation -->
+                    <div class="flex border-b border-gray-200 mb-4">
+                        <button onclick="app.switchTab('product')" id="tab-product" class="flex-1 py-2 text-xs font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none">Product</button>
+                        <button onclick="app.switchTab('category')" id="tab-category" class="flex-1 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 focus:outline-none">Category</button>
+                        <button onclick="app.switchTab('type')" id="tab-type" class="flex-1 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 focus:outline-none">Type</button>
                     </div>
 
-                    <div class="border-t border-gray-100 pt-6">
-                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">New Item</h4>
+                    <!-- Register Product Section -->
+                    <div id="section-product" class="tab-content">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Register Product</h4>
 
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Product Type</label>
                         <select id="factory-selector" class="w-full p-2 border border-gray-300 rounded-lg mb-3 bg-white text-sm">
                             <option value="">Select Product Type</option>
                         </select>
 
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Product Category</label>
                         <select id="parent-category-selector" class="w-full p-2 border border-gray-300 rounded-lg mb-3 bg-white text-sm">
-                            <option value="">-Select Parent Category </option>
+                            <option value="">Select Product Category</option>
                         </select>
 
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Name</label>
                         <input type="text" id="new-product-name" placeholder="Name" class="w-full p-2 border border-gray-300 rounded-lg mb-2 text-sm">
+                        
                         <div class="grid grid-cols-2 gap-2 mb-2">
-                            <input type="number" id="new-product-price" placeholder="Price" class="p-2 border border-gray-300 rounded-lg text-sm" value="100">
-                            <input type="number" id="new-product-stock" placeholder="Initial Stock" class="p-2 border border-gray-300 rounded-lg text-sm" value="10">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Price</label>
+                                <input type="number" id="new-product-price" placeholder="Price" class="w-full p-2 border border-gray-300 rounded-lg text-sm" value="100">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Initial Stock</label>
+                                <input type="number" id="new-product-stock" placeholder="Initial Stock" class="w-full p-2 border border-gray-300 rounded-lg text-sm" value="10">
+                            </div>
                         </div>
+                        
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Low Stock Threshold</label>
                         <input type="number" id="new-product-threshold" placeholder="Low Stock Threshold" class="w-full p-2 border border-gray-300 rounded-lg text-sm" value="5">
 
                         <div id="factory-specific-input" class="mt-2 mb-4">
@@ -120,6 +156,55 @@
                             <i data-lucide="plus-circle" size="16"></i>
                             <span>Create New Product</span>
                         </button>
+                    </div>
+
+                    <!-- Register Product Category Section -->
+                    <div id="section-category" class="tab-content hidden">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Register Product Category</h4>
+
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Related Product Type</label>
+                        <select id="cat-parent-type" class="w-full p-2 border border-gray-300 rounded-lg mb-3 text-sm bg-white">
+                            <option value="">Select Parent Type</option>
+                        </select>
+
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Category Name</label>
+                        <input type="text" id="new-category-name" placeholder="Category Name" class="w-full p-2 border border-gray-300 rounded-lg mb-2 text-sm">
+
+                        <button onclick="app.createCategory()" class="w-full flex items-center justify-center gap-2 p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors active:scale-95 shadow-md mb-3">
+                            <i data-lucide="folder-plus" size="16"></i>
+                            <span>Register New Category</span>
+                        </button>
+
+                        <div class="flex gap-2">
+                            <select id="delete-category-selector" class="w-full p-2 border border-gray-300 rounded-lg bg-white text-sm">
+                                <option value="">Select Category to Delete</option>
+                            </select>
+                            <button onclick="app.deleteCategory()" class="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors active:scale-95">
+                                <i data-lucide="trash-2" size="16"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Register Product Type Section -->
+                    <div id="section-type" class="tab-content hidden">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Register Product Type</h4>
+
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Product Type Name</label>
+                        <input type="text" id="new-product-type-name" placeholder="Product Type Name" class="w-full p-2 border border-gray-300 rounded-lg mb-2 text-sm">
+
+                        <button onclick="app.registerProductType()" class="w-full flex items-center justify-center gap-2 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors active:scale-95 shadow-md mb-3">
+                            <i data-lucide="settings" size="16"></i>
+                            <span>Register Product Type</span>
+                        </button>
+
+                        <div class="flex gap-2">
+                            <select id="delete-type-selector" class="w-full p-2 border border-gray-300 rounded-lg bg-white text-sm">
+                                <option value="">Select Type to Delete</option>
+                            </select>
+                            <button onclick="app.deleteProductType()" class="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors active:scale-95">
+                                <i data-lucide="trash-2" size="16"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -170,7 +255,7 @@
             async fetchInventory() {
                 console.log("Fetch Inventory");
                 try {
-                    const response = await fetch('/api/inventory');
+                    const response = await fetch('/api/inventory?t=' + Date.now());
                     this.inventory = await response.json();
                 } catch (error) {
                     console.error('Error fetching inventory:', error);
@@ -200,6 +285,25 @@
                     }
                 }
                 return null;
+            }
+
+            // --- TABS ---
+            switchTab(tabName) {
+                // Hide all sections
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                
+                // Show selected section
+                document.getElementById(`section-${tabName}`).classList.remove('hidden');
+
+                // Reset tab styles
+                ['product', 'category', 'type'].forEach(t => {
+                    const btn = document.getElementById(`tab-${t}`);
+                    if (t === tabName) {
+                        btn.className = 'flex-1 py-2 text-xs font-bold text-blue-600 border-b-2 border-blue-600 focus:outline-none';
+                    } else {
+                        btn.className = 'flex-1 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 focus:outline-none';
+                    }
+                });
             }
 
             // --- ACTIONS ---
@@ -435,7 +539,7 @@
                             </div>
                             <div>
                                 <h4 class="font-medium text-gray-800">${prod.name}</h4>
-                                <p class="text-xs text-gray-500">ID: ${prod.id} | $${prod.price}</p>
+                                <p class="text-xs text-gray-500"> $${prod.price}</p>
                             </div>
                         </div>
                         <div class="text-right">
@@ -525,26 +629,80 @@
             }
 
             renderCategorySelector() {
-                const selector = document.getElementById('parent-category-selector');
                 const categories = this.collectCategoryNames();
+                
+                // Populate Product Parent Selector - REMOVED (Now handled by Product Type selection)
+                const prodSelector = document.getElementById('parent-category-selector');
+                if (prodSelector && prodSelector.options.length <= 1) {
+                     prodSelector.innerHTML = '<option value="">Select Product Type First</option>';
+                }
 
-                selector.innerHTML = '<option value="">Select Parent Category</option>';
-                categories.forEach(name => {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.innerText = name;
-                    selector.appendChild(option);
-                });
+                // Populate Delete Category Selector
+                const delCatSelector = document.getElementById('delete-category-selector');
+                if (delCatSelector) {
+                    delCatSelector.innerHTML = '<option value="">Select Category to Delete</option>';
+                    categories.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.innerText = name;
+                        delCatSelector.appendChild(option);
+                    });
+                }
             }
 
-            fetchProductTypes() {
+            findCategoryNode(node, name) {
+                if (!node) return null;
+                if (node.type === 'category' && node.name === name) {
+                    return node;
+                }
+                if (node.children) {
+                    for (const child of node.children) {
+                        const found = this.findCategoryNode(child, name);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            updateProductCategorySelector(type) {
+                const selector = document.getElementById('parent-category-selector');
+                selector.innerHTML = '<option value="">Select Product Category</option>';
+                
+                if (!type) {
+                    selector.innerHTML = '<option value="">Select Product Type First</option>';
+                    return;
+                }
+
+                const typeCategoryNode = this.findCategoryNode(this.inventory, type);
+                
+                if (typeCategoryNode) {
+                    const categories = this.collectCategoryNames(typeCategoryNode);
+                    categories.forEach(name => {
+                        // Filter out the category that matches the type name itself
+                        // This prevents the "container" category from appearing in the product selection list
+                        if (name.toLowerCase() === type.toLowerCase()) return;
+
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.innerText = name;
+                        selector.appendChild(option);
+                    });
+                } else {
+                     // Fallback if the category for the type doesn't exist yet
+                     // Maybe show all or just the root?
+                     // For now, let's show nothing or a message
+                     selector.innerHTML = '<option value="">No categories found for this type</option>';
+                }
+            }
+
+            async fetchProductTypes() {
                 try {
-                    const response = fetch('/api/product-types');
+                    const response = await fetch('/api/product-types?t=' + Date.now());
                     if (response.ok) {
-                        this.productTypes = response.json();
+                        this.productTypes = await response.json();
                     } else {
                         console.error('API Error fetching product types:', response.status);
-                        this.productTypes = ["Electronic", "Apparel"];
+                        this.productTypes = ["Electronics", "Apparel"];
                     }
                 } catch (error) {
                     console.error('Network or Parse Error fetching product types', error);
@@ -553,16 +711,35 @@
 
             renderFactorySelector() {
                 const selector = document.getElementById('factory-selector');
+                const delTypeSelector = document.getElementById('delete-type-selector');
+                const catParentSelector = document.getElementById('cat-parent-type');
 
                 selector.innerHTML = '<option value="">Select Product Type</option>';
+                if (delTypeSelector) delTypeSelector.innerHTML = '<option value="">Select Type to Delete</option>';
+                if (catParentSelector) catParentSelector.innerHTML = '<option value="">Select Related Product Type</option>';
+
                 if(this.productTypes.length === 0){
-                    this.productTypes = ["Electronic", "Apparel"];
+                    this.productTypes = ["Electronics", "Apparel"];
                 }
                 this.productTypes.forEach(type => {
                     const option = document.createElement('option');
                     option.value = type;
                     option.innerText = type + ' Product';
                     selector.appendChild(option);
+
+                    if (delTypeSelector) {
+                        const delOption = document.createElement('option');
+                        delOption.value = type;
+                        delOption.innerText = type;
+                        delTypeSelector.appendChild(delOption);
+                    }
+
+                    if (catParentSelector) {
+                        const catOption = document.createElement('option');
+                        catOption.value = type;
+                        catOption.innerText = type;
+                        catParentSelector.appendChild(catOption);
+                    }
                 });
                 this.setupFactoryListener();
             }
@@ -573,11 +750,12 @@
             }
 
             renderFactorySpecificInput(productType) {
+                this.updateProductCategorySelector(productType);
                 const container = document.getElementById('factory-specific-input');
                 container.innerHTML = '';
 
                 let html = '';
-                if (productType === 'Electronic') {
+                if (productType === 'Electronics') {
                     html = `
                         <input type="number" id="specific-warranty" placeholder="Warranty Months (e.g., 12)" class="w-full p-2 border border-gray-300 rounded-lg text-sm" value="12" required>
                     `;
@@ -608,7 +786,7 @@
                 }
 
                 let specificParam = '';
-                if (type === 'Electronic') {
+                if (type === 'Electronics') {
                     specificParam = document.getElementById('specific-warranty').value;
                 } else if (type === 'Apparel') {
                     specificParam = document.getElementById('specific-size').value;
@@ -656,6 +834,218 @@
                 } catch (error) {
                     this.showAlarm('error', `Network error during product creation. Check Server Console.`);
                     console.error('Network/Client Error:', error);
+                }
+            }
+
+            async createCategory() {
+                const name = document.getElementById('new-category-name').value;
+                const parentType = document.getElementById('cat-parent-type').value;
+
+                if (!parentType) {
+                    this.showAlarm('error', 'Please select a product Type.');
+                    return;
+                }
+
+                if (!name) {
+                    this.showAlarm('error', 'Please enter a Category Name.');
+                    return;
+                }
+
+                if (!/^[a-zA-Z0-9\s-]+$/.test(name)) {
+                    this.showAlarm('error', 'Category Name contains invalid characters. Only letters, numbers, spaces, and hyphens are allowed.');
+                    return;
+                }
+
+                const formData = new URLSearchParams();
+                formData.append('type', 'create_category');
+                formData.append('name', name);
+                formData.append('parentName', parentType);
+
+                try {
+                    const response = await fetch('/api/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    });
+
+                    const responseText = await response.text();
+                    let result = { success: false, message: responseText };
+
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (e) {
+                        result.message = responseText.substring(0, 100) + '...';
+                    }
+
+                    if (response.ok) {
+                        if (result.status === 'success') {
+                            this.showAlarm('info', `Category "${name}" created successfully.`);
+                            await this.fetchInventory();
+                            this.renderAll();
+                            // Clear input
+                            document.getElementById('new-category-name').value = '';
+                        } else {
+                            this.showAlarm('error', `Category creation failed: ${result.message}`);
+                        }
+                    } else {
+                        this.showAlarm('error', `Category creation failed. HTTP Status ${response.status}`);
+                    }
+                } catch (error) {
+                    this.showAlarm('error', `Network error during category creation.`);
+                    console.error('Network/Client Error:', error);
+                }
+            }
+
+            async registerProductType() {
+                const typeName = document.getElementById('new-product-type-name').value;
+
+                if (!typeName) {
+                    this.showAlarm('error', 'Please enter a Product Type Name.');
+                    return;
+                }
+
+                if (!/^[a-zA-Z0-9\s-]+$/.test(typeName)) {
+                    this.showAlarm('error', 'Product Type Name contains invalid characters. Only letters, numbers, spaces, and hyphens are allowed.');
+                    return;
+                }
+
+                const formData = new URLSearchParams();
+                formData.append('type', 'register_product_type');
+                formData.append('typeName', typeName);
+
+                try {
+                    const response = await fetch('/api/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    });
+
+                    const responseText = await response.text();
+                    let result = { success: false, message: responseText };
+
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (e) {
+                        result.message = responseText.substring(0, 100) + '...';
+                    }
+
+                    if (response.ok) {
+                        if (result.status === 'success') {
+                            this.showAlarm('info', `Product Type "${typeName}" registered successfully.`);
+                            await this.fetchProductTypes();
+                            await this.fetchInventory(); // Refresh inventory to show new category
+                            this.renderAll();
+                            // Clear input
+                            document.getElementById('new-product-type-name').value = '';
+                        } else {
+                            this.showAlarm('error', `Registration failed: ${result.message}`);
+                        }
+                    } else {
+                        this.showAlarm('error', `Registration failed. HTTP Status ${response.status}`);
+                    }
+                } catch (error) {
+                    this.showAlarm('error', `Network error during registration.`);
+                    console.error('Network/Client Error:', error);
+                }
+            }
+
+            async deleteProduct() {
+                if (!this.selectedProductId) return;
+                const product = this.findProduct(this.selectedProductId);
+                if (!product) return;
+
+                if (!confirm(`Are you sure you want to delete product "${product.name}"?`)) return;
+
+                const formData = new URLSearchParams();
+                formData.append('type', 'remove_product');
+                formData.append('product', product.name); // Using name as identifier for simplicity in this demo
+
+                try {
+                    const response = await fetch('/api/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    });
+                    
+                    if (response.ok) {
+                        this.showAlarm('info', `Product "${product.name}" removed.`);
+                        this.selectedProductId = null;
+                        await this.fetchInventory();
+                        this.renderAll();
+                    } else {
+                        this.showAlarm('error', 'Failed to remove product.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    this.showAlarm('error', 'Network error removing product.');
+                }
+            }
+
+            async deleteCategory() {
+                const name = document.getElementById('delete-category-selector').value;
+                if (!name) {
+                    this.showAlarm('error', 'Please select a category to remove.');
+                    return;
+                }
+
+                if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
+
+                const formData = new URLSearchParams();
+                formData.append('type', 'remove_category');
+                formData.append('name', name);
+
+                try {
+                    const response = await fetch('/api/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    });
+                    
+                    if (response.ok) {
+                        this.showAlarm('info', `Category "${name}" removed.`);
+                        await this.fetchInventory();
+                        this.renderAll();
+                    } else {
+                        const text = await response.text();
+                        this.showAlarm('error', 'Failed to remove category: ' + text);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    this.showAlarm('error', 'Network error removing category.');
+                }
+            }
+
+            async deleteProductType() {
+                const typeName = document.getElementById('delete-type-selector').value;
+                if (!typeName) {
+                    this.showAlarm('error', 'Please select a product type to remove.');
+                    return;
+                }
+
+                if (!confirm(`Are you sure you want to delete product type "${typeName}"?`)) return;
+
+                const formData = new URLSearchParams();
+                formData.append('type', 'remove_product_type');
+                formData.append('typeName', typeName);
+
+                try {
+                    const response = await fetch('/api/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: formData.toString()
+                    });
+                    
+                    if (response.ok) {
+                        this.showAlarm('info', `Product Type "${typeName}" removed.`);
+                        await this.fetchProductTypes();
+                        await this.fetchInventory(); // Refresh inventory to remove category
+                        this.renderAll();
+                    } else {
+                        this.showAlarm('error', 'Failed to remove product type.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    this.showAlarm('error', 'Network error removing product type.');
                 }
             }
 

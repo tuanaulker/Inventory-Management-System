@@ -11,113 +11,105 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         try {
-            PrintStream fileOut = new PrintStream(new File("outputReport.txt"));
             PrintStream consoleOut = System.out;
-            System.setOut(fileOut);
 
             System.out.println("Design Patterns Inventory System Demo");
 
-            System.out.println("\n[Factory Pattern] Creating Products");
-            IProductFactory factory = new ElectronicProductFactory();
-            
-            Product laptop = factory.createProduct("Laptop", 1200, 10, 5);
-            Product smartphone = factory.createProduct("Smartphone", 800, 20, 8);
-            Product headphones = factory.createProduct("Headphones", 150, 2, 5);
-
-            System.out.println("Created: " + laptop.getName());
-            System.out.println("Created: " + smartphone.getName());
-            System.out.println("Created: " + headphones.getName());
-
             System.out.println("\n[Observer Pattern] Setting up Inventory Manager");
             InventoryManager manager = new InventoryManager();
-            
-            laptop.registerObs(manager);
-            smartphone.registerObs(manager);
-            headphones.registerObs(manager);
-            System.out.println("InventoryManager registered to observe all products.");
 
             System.out.println("\n[Composite Pattern] Organizing Hierarchy...");
-            ProductCategory electronics = new ProductCategory("Electronics");
-            ProductCategory computers = new ProductCategory("Computers");
-            ProductCategory audio = new ProductCategory("Audio");
+            ProductCategory rootCategory = initializeInventory(manager);
 
-            electronics.add(computers);
-            electronics.add(audio);
-            
-            computers.add(laptop);
-            computers.add(smartphone);
-            audio.add(headphones);
+            // Retrieve objects for demo
+            Product laptop = rootCategory.findProductByName("Laptop");
+            Product smartphone = rootCategory.findProductByName("Smartphone");
+            Product headphones = rootCategory.findProductByName("Headphones");
 
             System.out.println("Displaying Hierarchy:");
-            electronics.display();
+            rootCategory.display();
             
-            System.out.println("Total Inventory Value: $" + electronics.getValue());
-
-            System.out.println("\n[Command & State Patterns] Executing Transactions...");
-
-            System.out.println("\n-- Transaction 1: Selling 2 Laptops --");
-            CommandInterface sellLaptop = new RemoveStock(laptop, 2);
-            manager.executeCommand(sellLaptop);
-
-            System.out.println("\n-- Transaction 2: Selling 1 Headphone (Trigger Low Stock) --");
-
-            CommandInterface sellHeadphone = new RemoveStock(headphones, 1);
-            manager.executeCommand(sellHeadphone);
-
-            System.out.println("\n-- Transaction 3: Selling remaining Headphone (Trigger OutOfStock) --");
-            CommandInterface sellLastHeadphone = new RemoveStock(headphones, 1);
-            manager.executeCommand(sellLastHeadphone);
-
-            System.out.println("\n-- Transaction 4: Attempting to sell Headphone when OutOfStock --");
-            CommandInterface sellFail = new RemoveStock(headphones, 1);
-            manager.executeCommand(sellFail);
-
-            System.out.println("\n-- Transaction 5: Undoing last command (Restocking Headphone) --");
-            manager.undoLastCommand();
-            
-            System.out.println("Undoing 'sellFail' (which actually adds stock because the command object doesn't know the logic failed inside the model):");
-            manager.undoLastCommand(); 
-            
-            System.out.println("Undoing 'sellLastHeadphone':");
-            manager.undoLastCommand();
-
-            System.out.println("\nFinal Inventory Status:");
-            electronics.display();
+            System.out.println("Total Inventory Value: $" + rootCategory.getValue());
 
             System.out.println("\n[UPDATE FEATURE] Updating Product Details...");
-            laptop.setPrice(1500);
-            laptop.setThreshold(3);
+            if (laptop != null) {
+                laptop.setPrice(1500);
+                laptop.setThreshold(3);
+            }
 
             System.out.println("\n[SEARCH FEATURE] Finding Products...");
-            Product found = electronics.findProductByName("Laptop");
+            Product found = rootCategory.findProductByName("Laptop");
             if (found != null) {
                 System.out.println("✓ Found: " + found.getName() + " - Stock: " + found.getStockLevel());
             }
 
             System.out.println("\n[ALERT SYSTEM] Checking Low Stock...");
-            List<Product> lowStock = electronics.getAllLowStockProducts();
+            List<Product> lowStock = rootCategory.getAllLowStockProducts();
             System.out.println("Products needing attention: " + lowStock.size());
 
-            System.out.println("\n[REPORTING] Generating Summary...");
-            manager.generateInventoryReport(electronics);
-
-            System.out.println("\n[HISTORY] Command History...");
-            manager.printHistory();
-            manager.exportHistoryToFile("command_history.txt");
-
             System.out.println("\n[STATE PATTERN] Testing handleRestock...");
-            System.out.println("Restocking headphones (currently " +
-                    headphones.getState().getStateName() + ")...");
-            headphones.restock(10);
+            if (headphones != null) {
+                System.out.println("Restocking headphones (currently " +
+                        headphones.getState().getStateName() + ")...");
+                headphones.restock(10);
+            }
 
-            saveInventoryDatabase(electronics);
+            saveInventoryDatabase(rootCategory);
 
             System.setOut(consoleOut);
-            System.out.println("Report generated in outputReport.txt");
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static ProductCategory initializeInventory(InventoryManager manager) {
+        ProductCategory rootCategory = inventory.Database.load();
+
+        if (rootCategory == null) {
+            System.out.println("No database found. Creating default inventory");
+            IProductFactory factory = new ElectronicProductFactory();
+            IProductFactory apparelFactory = new ApparelProductFactory();
+
+            Product laptop = factory.createProduct("Laptop", 1200, 10, 5);
+            Product smartphone = factory.createProduct("Smartphone", 800, 20, 8);
+            Product headphones = factory.createProduct("Headphones", 150, 2, 5);
+
+            Product tshirt = apparelFactory.createProduct("T-Shirt", 30, 15, 5);
+            Product jeans = apparelFactory.createProduct("Jeans", 70, 8, 3);
+
+            rootCategory = new ProductCategory("Global Inventory");
+            ProductCategory electronics = new ProductCategory("Electronics");
+            ProductCategory apparel = new ProductCategory("Apparel");
+
+            ProductCategory computers = new ProductCategory("Computers");
+            ProductCategory audio = new ProductCategory("Audio");
+            ProductCategory clothing = new ProductCategory("Clothing");
+
+            rootCategory.add(electronics);
+            rootCategory.add(apparel);
+
+            electronics.add(computers);
+            electronics.add(audio);
+
+            computers.add(laptop);
+            computers.add(smartphone);
+            audio.add(headphones);
+
+            apparel.add(clothing);
+
+            clothing.add(tshirt);
+            clothing.add(jeans);
+
+            inventory.Database.save(rootCategory);
+        } else {
+            System.out.println("Loaded inventory from database.");
+        }
+        
+        if (manager != null) {
+            rootCategory.registerObs(manager);
+        }
+        return rootCategory;
     }
 
     public static void saveInventoryDatabase(ProductCategory root) {

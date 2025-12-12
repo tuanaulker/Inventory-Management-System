@@ -37,6 +37,7 @@ public class SimpleWebServer {
         server.createContext("/api/action", new ActionHandler());
 
         server.createContext("/api/inventory", new InventoryApiHandler());
+        server.createContext("/api/product-types", new ProductTypesHandler());
         server.createContext("/api/logs", new LogsHandler());
 
         server.createContext("/", new DashboardHandler());
@@ -55,60 +56,11 @@ public class SimpleWebServer {
                 logs.add("Update: " + prd.getName() + " is now " + prd.getState().getClass().getSimpleName());
             }
         };
-        FACTORIES.put("electronic", new ElectronicProductFactory());
+        FACTORIES.put("electronics", new ElectronicProductFactory());
         FACTORIES.put("apparel", new ApparelProductFactory());
 
-        rootCategory = inventory.Database.load();
-
-        if (rootCategory == null) {
-            System.out.println("No database found. Creating default inventory");
-            IProductFactory factory = new ElectronicProductFactory();
-            IProductFactory apparelFactory = new ApparelProductFactory();
-
-            Product laptop = factory.createProduct("Laptop", 1200, 10, 5);
-            Product smartphone = factory.createProduct("Smartphone", 800, 20, 8);
-            Product headphones = factory.createProduct("Headphones", 150, 2, 5);
-
-            Product tshirt = apparelFactory.createProduct("T-Shirt", 30, 15, 5);
-            Product jeans = apparelFactory.createProduct("Jeans", 70, 8, 3);
-
-            rootCategory = new ProductCategory("Global Inventory");
-            ProductCategory electronics = new ProductCategory("Electronics");
-            ProductCategory apparel = new ProductCategory("Apparel");
-
-            ProductCategory computers = new ProductCategory("Computers");
-            ProductCategory audio = new ProductCategory("Audio");
-
-            rootCategory.add(electronics);
-            rootCategory.add(apparel);
-
-            electronics.add(computers);
-            electronics.add(audio);
-
-            computers.add(laptop);
-            computers.add(smartphone);
-            audio.add(headphones);
-
-            apparel.add(tshirt);
-            apparel.add(jeans);
-
-            inventory.Database.save(rootCategory);
-        } else {
-            System.out.println("Loaded inventory from database.");
-        }
-        rootCategory.registerObs(manager);
-        //registerObserversRecursively(rootCategory);
+        rootCategory = Main.initializeInventory(manager);
     }
-
-    /*private static void registerObserversRecursively(ProductComponent component) {
-        if (component instanceof ProductCategory) {
-            for (ProductComponent child : ((ProductCategory) component).getChildren()) {
-                registerObserversRecursively(child);
-            }
-        } else if (component instanceof Product) {
-            ((Product) component).registerObs(manager);
-        }
-    }*/
 
     static class DashboardHandler implements HttpHandler {
         @Override
@@ -136,6 +88,9 @@ public class SimpleWebServer {
             String json = convertCategoryToJson(rootCategory);
             byte[] response = json.getBytes(StandardCharsets.UTF_8);
             t.getResponseHeaders().set("Content-Type", "application/json");
+            t.getResponseHeaders().set("Cache-Control", "no-cache, no-store, must-revalidate");
+            t.getResponseHeaders().set("Pragma", "no-cache");
+            t.getResponseHeaders().set("Expires", "0");
             t.sendResponseHeaders(200, response.length);
             OutputStream os = t.getResponseBody();
             os.write(response);
@@ -177,6 +132,28 @@ public class SimpleWebServer {
         }
     }
 
+    static class ProductTypesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            Gson gson = new Gson();
+            // Capitalize first letter for display
+            List<String> types = new ArrayList<>();
+            for (String key : FACTORIES.keySet()) {
+                types.add(key.substring(0, 1).toUpperCase() + key.substring(1));
+            }
+            String json = gson.toJson(types);
+            byte[] response = json.getBytes(StandardCharsets.UTF_8);
+            t.getResponseHeaders().set("Content-Type", "application/json");
+            t.getResponseHeaders().set("Cache-Control", "no-cache, no-store, must-revalidate");
+            t.getResponseHeaders().set("Pragma", "no-cache");
+            t.getResponseHeaders().set("Expires", "0");
+            t.sendResponseHeaders(200, response.length);
+            OutputStream os = t.getResponseBody();
+            os.write(response);
+            os.close();
+        }
+    }
+
     static class StyleHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange t) throws IOException {
@@ -202,6 +179,8 @@ public class SimpleWebServer {
                 Map<String, String> params = parseFormData(formData);
 
                 String productName = params.get("product");
+                if (productName != null) productName = productName.trim();
+                
                 String action = params.get("type");
                 String amountStr = params.get("amount");
                 int amount = 1;
@@ -221,6 +200,10 @@ public class SimpleWebServer {
                     String productType = params.get("productType");
                     String parentCategoryName = params.get("parentCategory");
                     String name = params.get("name");
+                    
+                    if (name != null) name = name.trim();
+                    if (parentCategoryName != null) parentCategoryName = parentCategoryName.trim();
+                    if (productType != null) productType = productType.trim();
 
                     int price = Integer.parseInt(params.get("price"));
                     int stock = Integer.parseInt(params.get("stock"));
@@ -233,7 +216,7 @@ public class SimpleWebServer {
                     }
 
                     Product newProduct;
-                    if (productType.equalsIgnoreCase("electronic")) {
+                    if (productType.equalsIgnoreCase("electronics")) {
                         int warranty = Integer.parseInt(specificParam);
                         newProduct = new inventory.ElectronicProduct(name, price, stock, threshold, warranty);
                     } else if (productType.equalsIgnoreCase("apparel")) {
@@ -252,6 +235,120 @@ public class SimpleWebServer {
                     addLog("CREATE: " + name + " added to " + parentCategoryName + ".");
                     inventory.Database.save(rootCategory);
                 }
+                else if ("create_category".equals(action)) {
+                    String name = params.get("name");
+                    if (name != null) name = name.trim();
+                    
+                    String parentName = params.get("parentName");
+                    if (parentName != null) parentName = parentName.trim();
+
+                    if (name == null || !name.matches("^[a-zA-Z0-9\\s-]+$")) {
+                        throw new IllegalArgumentException("Invalid category name. Only letters, numbers, spaces, and hyphens are allowed.");
+                    }
+
+                    if (findCategoryCaseInsensitive(rootCategory, name) != null) {
+                        throw new IllegalArgumentException("Category '" + name + "' already exists.");
+                    }
+                    
+                    ProductCategory parent = rootCategory;
+                    if (parentName != null && !parentName.isEmpty()) {
+                        ProductCategory found = findCategoryCaseInsensitive(rootCategory, parentName);
+                        if (found != null) {
+                            parent = found;
+                        } else {
+                            // If parent type category doesn't exist, create it under root first
+                            // This handles the case where a Type is registered but no category exists for it yet
+                            ProductCategory typeCategory = new ProductCategory(parentName);
+                            rootCategory.add(typeCategory);
+                            parent = typeCategory;
+                        }
+                    }
+                    
+                    CommandInterface cmd = new AddCategoryCommand(parent, name);
+                    manager.executeCommand(cmd);
+                    
+                    addLog("CREATE CATEGORY: " + name + " added to " + parent.getName() + ".");
+                    inventory.Database.save(rootCategory);
+                }
+                else if ("register_product_type".equals(action)) {
+                    String typeName = params.get("typeName");
+                    if (typeName != null) typeName = typeName.trim();
+                    
+                    if (typeName == null || !typeName.matches("^[a-zA-Z0-9\\s-]+$")) {
+                        throw new IllegalArgumentException("Invalid product type name. Only letters, numbers, spaces, and hyphens are allowed.");
+                    }
+                    
+                    CommandInterface cmd = new AddProductTypeCommand(FACTORIES, typeName, new GenericProductFactory());
+                    manager.executeCommand(cmd);
+
+                    // Sync: Create corresponding category if it doesn't exist
+                    if (findCategoryCaseInsensitive(rootCategory, typeName) == null) {
+                         CommandInterface catCmd = new AddCategoryCommand(rootCategory, typeName);
+                         manager.executeCommand(catCmd);
+                    }
+                    
+                    addLog("REGISTER TYPE: " + typeName + " registered.");
+                }
+                else if ("remove_product".equals(action)) {
+                    Product target = findProduct(rootCategory, productName);
+                    if (target != null) {
+                        ProductCategory parent = findParent(rootCategory, target);
+                        if (parent != null) {
+                            CommandInterface cmd = new RemoveProductCommand(parent, target);
+                            manager.executeCommand(cmd);
+                            addLog("REMOVE: Product " + productName + " removed.");
+                            inventory.Database.save(rootCategory);
+                        } else {
+                            throw new IllegalStateException("Parent category not found for product '" + productName + "'.");
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Product '" + productName + "' not found.");
+                    }
+                }
+                else if ("remove_category".equals(action)) {
+                    String categoryName = params.get("name");
+                    if (categoryName != null) categoryName = categoryName.trim();
+                    
+                    ProductCategory target = findCategoryCaseInsensitive(rootCategory, categoryName);
+                    if (target != null) {
+                        if (target == rootCategory) {
+                             throw new IllegalArgumentException("Cannot remove root category.");
+                        }
+                        ProductCategory parent = findParent(rootCategory, target);
+                        if (parent != null) {
+                            CommandInterface cmd = new RemoveCategoryCommand(parent, target);
+                            manager.executeCommand(cmd);
+                            addLog("REMOVE: Category " + categoryName + " removed.");
+                            inventory.Database.save(rootCategory);
+                        } else {
+                            throw new IllegalStateException("Parent category not found for '" + categoryName + "'.");
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Category '" + categoryName + "' not found.");
+                    }
+                }
+                else if ("remove_product_type".equals(action)) {
+                    String typeName = params.get("typeName");
+                    if (typeName != null) typeName = typeName.trim();
+                    
+                    if (!FACTORIES.containsKey(typeName.toLowerCase())) {
+                        throw new IllegalArgumentException("Product Type '" + typeName + "' not found.");
+                    }
+                    CommandInterface cmd = new RemoveProductTypeCommand(FACTORIES, typeName);
+                    manager.executeCommand(cmd);
+
+                    // Sync: Remove corresponding category if it exists
+                    ProductCategory typeCategory = findCategoryCaseInsensitive(rootCategory, typeName);
+                    if (typeCategory != null) {
+                        ProductCategory parent = findParent(rootCategory, typeCategory);
+                        if (parent != null) {
+                             CommandInterface catCmd = new RemoveCategoryCommand(parent, typeCategory);
+                             manager.executeCommand(catCmd);
+                        }
+                    }
+
+                    addLog("REMOVE: Product Type " + typeName + " removed.");
+                }
                 else if ("undo".equals(action)) {
                     manager.undoLastCommand();
                     inventory.Database.save(rootCategory);
@@ -261,9 +358,9 @@ public class SimpleWebServer {
                     if (target != null) {
                         CommandInterface cmd = null;
                         if ("buy".equals(action)) {
-                            cmd = new RemoveStock(target, amount);
+                            cmd = new RemoveStockCommand(target, amount);
                         } else if ("restock".equals(action)) {
-                            cmd = new AddStock(target, amount);
+                            cmd = new AddStockCommand(target, amount);
                         }
 
                         if (cmd != null) {
@@ -282,10 +379,23 @@ public class SimpleWebServer {
             }
         }
 
+        private ProductCategory findParent(ProductCategory current, ProductComponent target) {
+            for (ProductComponent child : current.getChildren()) {
+                if (child == target) {
+                    return current;
+                }
+                if (child instanceof ProductCategory) {
+                    ProductCategory found = findParent((ProductCategory) child, target);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
+
         private Product findProduct(ProductCategory category, String name) {
             for (ProductComponent child : category.getChildren()) {
                 if (child instanceof Product) {
-                    if (((Product) child).getName().equals(name)) {
+                    if (((Product) child).getName().equalsIgnoreCase(name)) {
                         return (Product) child;
                     }
                 } else if (child instanceof ProductCategory) {
@@ -347,6 +457,18 @@ public class SimpleWebServer {
         for (ProductComponent child : category.getChildren()) {
             if (child instanceof ProductCategory) {
                 ProductCategory found = findCategory((ProductCategory) child, name);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static ProductCategory findCategoryCaseInsensitive(ProductCategory category, String name) {
+        if (category.getName().equalsIgnoreCase(name)) return category;
+
+        for (ProductComponent child : category.getChildren()) {
+            if (child instanceof ProductCategory) {
+                ProductCategory found = findCategoryCaseInsensitive((ProductCategory) child, name);
                 if (found != null) return found;
             }
         }
