@@ -55,7 +55,7 @@ public class StatePattern {
             }
 
             product.setStockLevel(newStock);
-            System.out.println("Sale handled by LowStock state. " + quantity + " items sold. Warning: Stock is low!");
+            System.out.println("Sale handled by LowStock state. " + quantity + " items sold. Warning: Stock is low.");
 
             if (newStock == 0) {
                 product.setState(new OutOfStock());
@@ -72,7 +72,7 @@ public class StatePattern {
 
             if (newStock >= product.getThreshold()) {
                 product.setState(new InStock());
-                System.out.println("State changed: LowStock → InStock");
+                System.out.println("State changed: LowStock -> InStock");
             }
         }
 
@@ -85,7 +85,7 @@ public class StatePattern {
     public static class OutOfStock implements State {
         @Override
         public void handleSale(Product product, int quantity) {
-            System.out.println("Error: Cannot sell " + product.getName() + ". Out of stock!");
+            System.out.println("Error: Cannot sell " + product.getName() + ". Out of stock");
         }
         @Override
         public void handleRestock(Product product, int quantity) {
@@ -96,10 +96,10 @@ public class StatePattern {
 
             if (newStock >= product.getThreshold()) {
                 product.setState(new InStock());
-                System.out.println("State changed: OutOfStock → InStock");
+                System.out.println("State changed: OutOfStock -> InStock");
             } else {
                 product.setState(new LowStock());
-                System.out.println("State changed: OutOfStock → LowStock");
+                System.out.println("State changed: OutOfStock -> LowStock");
             }
         }
 

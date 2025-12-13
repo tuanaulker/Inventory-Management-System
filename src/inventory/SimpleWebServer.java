@@ -136,7 +136,6 @@ public class SimpleWebServer {
         @Override
         public void handle(HttpExchange t) throws IOException {
             Gson gson = new Gson();
-            // Capitalize first letter for display
             List<String> types = new ArrayList<>();
             for (String key : FACTORIES.keySet()) {
                 types.add(key.substring(0, 1).toUpperCase() + key.substring(1));
@@ -243,7 +242,7 @@ public class SimpleWebServer {
                     if (parentName != null) parentName = parentName.trim();
 
                     if (name == null || !name.matches("^[a-zA-Z0-9\\s-]+$")) {
-                        throw new IllegalArgumentException("Invalid category name. Only letters, numbers, spaces, and hyphens are allowed.");
+                        throw new IllegalArgumentException("Invalid category name. Only letters, numbers, spaces and hyphens are allowed.");
                     }
 
                     if (findCategoryCaseInsensitive(rootCategory, name) != null) {
@@ -256,8 +255,6 @@ public class SimpleWebServer {
                         if (found != null) {
                             parent = found;
                         } else {
-                            // If parent type category doesn't exist, create it under root first
-                            // This handles the case where a Type is registered but no category exists for it yet
                             ProductCategory typeCategory = new ProductCategory(parentName);
                             rootCategory.add(typeCategory);
                             parent = typeCategory;
@@ -275,13 +272,12 @@ public class SimpleWebServer {
                     if (typeName != null) typeName = typeName.trim();
                     
                     if (typeName == null || !typeName.matches("^[a-zA-Z0-9\\s-]+$")) {
-                        throw new IllegalArgumentException("Invalid product type name. Only letters, numbers, spaces, and hyphens are allowed.");
+                        throw new IllegalArgumentException("Invalid product type name. Only letters, numbers, spaces and hyphens are allowed.");
                     }
                     
                     CommandInterface cmd = new AddProductTypeCommand(FACTORIES, typeName, new GenericProductFactory());
                     manager.executeCommand(cmd);
 
-                    // Sync: Create corresponding category if it doesn't exist
                     if (findCategoryCaseInsensitive(rootCategory, typeName) == null) {
                          CommandInterface catCmd = new AddCategoryCommand(rootCategory, typeName);
                          manager.executeCommand(catCmd);
@@ -337,7 +333,6 @@ public class SimpleWebServer {
                     CommandInterface cmd = new RemoveProductTypeCommand(FACTORIES, typeName);
                     manager.executeCommand(cmd);
 
-                    // Sync: Remove corresponding category if it exists
                     ProductCategory typeCategory = findCategoryCaseInsensitive(rootCategory, typeName);
                     if (typeCategory != null) {
                         ProductCategory parent = findParent(rootCategory, typeCategory);

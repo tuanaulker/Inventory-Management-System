@@ -10,7 +10,7 @@ public class FactoryPattern {
     }
 
     public static class ElectronicProductFactory implements inventory.FactoryPattern.IProductFactory {
-        public ElectronicProductFactory() { /* compiled code */ }
+        public ElectronicProductFactory() { }
 
         @Override
         public Product createProduct(java.lang.String name, int price, int stock, int threshold) {
@@ -20,7 +20,7 @@ public class FactoryPattern {
     }
 
     public static class ApparelProductFactory implements inventory.FactoryPattern.IProductFactory {
-        public ApparelProductFactory() { /* compiled code */ }
+        public ApparelProductFactory() { }
 
         @Override
         public Product createProduct(java.lang.String name, int price, int stock, int threshold) {

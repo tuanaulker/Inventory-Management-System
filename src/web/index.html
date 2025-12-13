@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory Manager GUI</title>
-    
-    <!-- Tailwind CSS -->
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Lucide Icons -->
+
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* Custom Animations */
         @keyframes slideDown {
             from { transform: translate(-50%, -100%); opacity: 0; }
             to { transform: translate(-50%, 0); opacity: 1; }
@@ -230,12 +227,8 @@
     </div>
 
     <script>
-        // --- LOGIC ---
-
         class InventoryApp {
             constructor() {
-                // Initial Data (Composite Pattern structure)
-                // This will be replaced by data fetched from the server
                 this.inventory = [];
 
                 this.selectedProductId = null;
@@ -262,16 +255,13 @@
                 }
             }
 
-            // --- HELPER: GET STATE ---
             getProductState(quantity, threshold) {
                 if (quantity === 0) return { name: 'OutOfStock', color: 'text-red-600', bg: 'bg-red-100', borderColor: 'border-red-100', cardBg: 'bg-red-50', icon: 'alert-triangle' };
-                if (quantity <= threshold) return { name: 'LowStock', color: 'text-orange-600', bg: 'bg-orange-100', borderColor: 'border-blue-100', cardBg: 'bg-blue-50', icon: 'activity' }; // Note: card logic kept somewhat neutral for low stock, or can be orange
+                if (quantity <= threshold) return { name: 'LowStock', color: 'text-orange-600', bg: 'bg-orange-100', borderColor: 'border-blue-100', cardBg: 'bg-blue-50', icon: 'activity' };
                 return { name: 'InStock', color: 'text-green-600', bg: 'bg-green-100', borderColor: 'border-blue-100', cardBg: 'bg-blue-50', icon: 'package' };
             }
 
-            // --- HELPER: RECURSIVE SEARCH ---
             findProduct(id, list = this.inventory) {
-                // Ensure we are iterating over an array
                 const items = Array.isArray(list) ? list : [list];
 
                 for (const item of items) {
@@ -287,15 +277,9 @@
                 return null;
             }
 
-            // --- TABS ---
             switchTab(tabName) {
-                // Hide all sections
                 document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-                
-                // Show selected section
                 document.getElementById(`section-${tabName}`).classList.remove('hidden');
-
-                // Reset tab styles
                 ['product', 'category', 'type'].forEach(t => {
                     const btn = document.getElementById(`tab-${t}`);
                     if (t === tabName) {
@@ -306,12 +290,9 @@
                 });
             }
 
-            // --- ACTIONS ---
-
             selectProduct(id) {
                 this.selectedProductId = id;
                 this.renderControls();
-                // Re-render inventory to show selection state if we wanted to highlight the row (optional)
             }
 
             async executeCommand(type, amount) {
@@ -338,10 +319,8 @@
                     });
 
                     if (response.ok) {
-                        // Refresh inventory from server to get updated state
                         await this.fetchInventory();
 
-                        // Update local state for UI feedback (optional, as fetchInventory does it)
                         const updatedProduct = this.findProduct(this.selectedProductId);
                         let msg = "";
 
@@ -349,8 +328,6 @@
                             msg = `Stock increased for ${product.name} by ${amount}`;
                         } else if (type === 'REMOVE_STOCK') {
                             msg = `Stock reduced for ${product.name} by ${amount}`;
-
-                            // Check Alarm
                             if (updatedProduct.quantity === 0) {
                                 this.showAlarm('critical', `CRITICAL: ${product.name} is now OUT OF STOCK!`);
                             } else if (updatedProduct.quantity <= updatedProduct.threshold) {
@@ -358,7 +335,6 @@
                             }
                         }
 
-                        // Add to History
                         this.commandHistory.unshift({
                             id: Date.now(),
                             type,
@@ -368,9 +344,7 @@
                             timestamp
                         });
 
-                        // Add to Log
                         this.notifications.unshift({ id: Date.now(), msg, time: timestamp });
-
                         this.renderAll();
                     }
                 } catch (error) {
@@ -426,8 +400,6 @@
 
             showAlarm(type, message) {
                 const container = document.getElementById('alarm-container');
-
-                // Clear existing alarms to prevent stacking
                 container.innerHTML = '';
 
                 const el = document.createElement('div');
@@ -446,13 +418,10 @@
                 container.appendChild(el);
                 lucide.createIcons();
 
-                // Auto remove
                 setTimeout(() => {
                     if(el.parentElement) el.remove();
                 }, 4000);
             }
-
-            // --- RENDERING ---
 
             renderAll() {
                 this.renderInventory();
@@ -466,9 +435,6 @@
             renderInventory() {
                 const container = document.getElementById('inventory-list');
                 container.innerHTML = '';
-
-                // Handle root category (which is a single object in our backend structure)
-                // If inventory is an array (from JSON), iterate. If object, wrap in array.
                 const items = Array.isArray(this.inventory) ? this.inventory : [this.inventory];
 
                 items.forEach(cat => {
@@ -582,8 +548,6 @@
                 active.style.display = 'block';
 
                 const state = this.getProductState(product.quantity, product.threshold);
-
-                // Update Card UI
                 const card = document.getElementById('product-card');
                 card.className = `p-4 rounded-xl border-2 mb-6 transition-colors duration-300 ${state.borderColor} ${state.cardBg}`;
 
@@ -599,7 +563,6 @@
                 const container = document.getElementById('log-container');
                 const btn = document.getElementById('undo-btn');
 
-                // Toggle Undo Button
                 btn.disabled = this.commandHistory.length === 0;
 
                 if (this.notifications.length === 0) {
@@ -630,14 +593,11 @@
 
             renderCategorySelector() {
                 const categories = this.collectCategoryNames();
-                
-                // Populate Product Parent Selector - REMOVED (Now handled by Product Type selection)
                 const prodSelector = document.getElementById('parent-category-selector');
                 if (prodSelector && prodSelector.options.length <= 1) {
                      prodSelector.innerHTML = '<option value="">Select Product Type First</option>';
                 }
 
-                // Populate Delete Category Selector
                 const delCatSelector = document.getElementById('delete-category-selector');
                 if (delCatSelector) {
                     delCatSelector.innerHTML = '<option value="">Select Category to Delete</option>';
@@ -678,8 +638,6 @@
                 if (typeCategoryNode) {
                     const categories = this.collectCategoryNames(typeCategoryNode);
                     categories.forEach(name => {
-                        // Filter out the category that matches the type name itself
-                        // This prevents the "container" category from appearing in the product selection list
                         if (name.toLowerCase() === type.toLowerCase()) return;
 
                         const option = document.createElement('option');
@@ -688,9 +646,6 @@
                         selector.appendChild(option);
                     });
                 } else {
-                     // Fallback if the category for the type doesn't exist yet
-                     // Maybe show all or just the root?
-                     // For now, let's show nothing or a message
                      selector.innerHTML = '<option value="">No categories found for this type</option>';
                 }
             }
@@ -852,7 +807,7 @@
                 }
 
                 if (!/^[a-zA-Z0-9\s-]+$/.test(name)) {
-                    this.showAlarm('error', 'Category Name contains invalid characters. Only letters, numbers, spaces, and hyphens are allowed.');
+                    this.showAlarm('error', 'Category Name contains invalid characters. Only letters, numbers, spaces and hyphens are allowed.');
                     return;
                 }
 
@@ -882,7 +837,6 @@
                             this.showAlarm('info', `Category "${name}" created successfully.`);
                             await this.fetchInventory();
                             this.renderAll();
-                            // Clear input
                             document.getElementById('new-category-name').value = '';
                         } else {
                             this.showAlarm('error', `Category creation failed: ${result.message}`);
@@ -933,9 +887,8 @@
                         if (result.status === 'success') {
                             this.showAlarm('info', `Product Type "${typeName}" registered successfully.`);
                             await this.fetchProductTypes();
-                            await this.fetchInventory(); // Refresh inventory to show new category
+                            await this.fetchInventory();
                             this.renderAll();
-                            // Clear input
                             document.getElementById('new-product-type-name').value = '';
                         } else {
                             this.showAlarm('error', `Registration failed: ${result.message}`);
@@ -958,7 +911,7 @@
 
                 const formData = new URLSearchParams();
                 formData.append('type', 'remove_product');
-                formData.append('product', product.name); // Using name as identifier for simplicity in this demo
+                formData.append('product', product.name);
 
                 try {
                     const response = await fetch('/api/action', {
@@ -1038,7 +991,7 @@
                     if (response.ok) {
                         this.showAlarm('info', `Product Type "${typeName}" removed.`);
                         await this.fetchProductTypes();
-                        await this.fetchInventory(); // Refresh inventory to remove category
+                        await this.fetchInventory();
                         this.renderAll();
                     } else {
                         this.showAlarm('error', 'Failed to remove product type.');

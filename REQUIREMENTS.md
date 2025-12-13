@@ -1,6 +1,6 @@
 # Project Development Requirements
 
-This document outlines the necessary tools and libraries required for developers to build, run, and test this project.
+This document outlines the necessary tools and libraries required for developers to build, run and test this project.
 
 ## 1. Core Prerequisites
 
@@ -11,41 +11,63 @@ This document outlines the necessary tools and libraries required for developers
 *   **Verification**: Run `java -version` and `javac -version` in your terminal to verify installation.
 
 ### Operating System
-*   The project is platform-independent and runs on **Windows**, **macOS**, and **Linux**.
-*   **macOS/Linux**: The provided commands in README use standard shell syntax (`mkdir`, `rm`, `cp`).
-*   **Windows**: You may need to use PowerShell or adjust file path separators (e.g., `\` instead of `/`) if running commands manually.
+*   The project is platform-independent and runs on **Windows**, **macOS** and **Linux**.
+*   **macOS/Linux**: The provided commands in README use standard shell syntax (`mkdir`, `javac`, `java`).
+*   **Windows**: Use Command Prompt or PowerShell. Adjust classpath separators if needed (`;` instead of `:`).
 
 ## 2. External Libraries (Dependencies)
 
-This project is designed to be lightweight and uses the standard Java library for the main application. However, testing requires external libraries.
-
 ### Runtime Dependencies
-*   **None**. The application uses the built-in `com.sun.net.httpserver` package for the web server and standard IO for the database.
+*   **Gson 2.10.1**: Used for JSON serialization in the web API. The JAR file (`gson-2.10.1.jar`) is included in the `src/` directory.
 
-### Test Dependencies (Optional)
-To compile and run the unit tests (`src/inventory/FactoryTest.java`), you need the **JUnit 5 (Jupiter)** platform.
-
-If you are not using an IDE (like IntelliJ or Eclipse) that bundles JUnit, you must download the following JARs and add them to your classpath:
-
-1.  `junit-jupiter-api-5.x.x.jar`
-2.  `junit-jupiter-engine-5.x.x.jar`
-3.  `junit-platform-commons-1.x.x.jar`
-4.  `opentest4j-1.x.x.jar`
-5.  `apiguardian-api-1.x.x.jar`
-
-**Or simply use the standalone console runner:**
-*   `junit-platform-console-standalone-1.x.x.jar`
+### Test Dependencies
+*   **None**: This project does not include automated unit tests. All testing is performed through the web interface and CLI demonstration.
 
 ## 3. Development Environment
 
 ### Recommended IDEs
-While not strictly required, using an IDE simplifies dependency management and code navigation:
+While not strictly required, using an IDE simplifies development:
 *   **Visual Studio Code**: Install the "Extension Pack for Java".
 *   **IntelliJ IDEA**: Community or Ultimate edition.
 *   **Eclipse IDE**: For Java Developers.
 
 ### Project Structure
-The project follows a standard source layout but does not use a build tool like Maven or Gradle by default.
+The project follows a standard source layout:
 *   **Source**: `src/inventory/*.java`
+*   **Web Assets**: `src/web/index.html`, `src/web/style.css`
+*   **Library**: `src/gson-2.10.1.jar`
 *   **Output**: `bin/` (Created during compilation)
 *   **Data**: `inventory_db.txt` (Created at runtime)
+
+## 4. Build and Run
+
+### Compilation
+```bash
+mkdir -p bin
+javac -cp src/gson-2.10.1.jar -d bin src/inventory/*.java
+```
+
+### Execution
+**Web Server:**
+```bash
+java -cp bin:src/gson-2.10.1.jar inventory.SimpleWebServer
+```
+*Note: On Windows, use `;` instead of `:` in classpath.*
+
+**CLI Demo:**
+```bash
+java -cp bin:src/gson-2.10.1.jar inventory.Main
+```
+
+## 5. Browser Requirements
+
+The web interface requires a modern web browser with JavaScript enabled:
+*   Chrome 90+
+*   Firefox 88+
+*   Safari 14+
+*   Edge 90+
+
+The interface uses:
+*   Tailwind CSS (loaded from CDN)
+*   Lucide Icons (loaded from CDN)
+*   Modern JavaScript (ES6+)

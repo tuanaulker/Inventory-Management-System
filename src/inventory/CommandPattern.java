@@ -193,9 +193,9 @@ public class CommandPattern {
             System.out.println("DEBUG: Executing RemoveProductCommand for " + target.getName());
             index = parent.getChildren().indexOf(target);
             if (index == -1) {
-                System.out.println("DEBUG: Target product not found in parent's children list!");
+                System.out.println("DEBUG: Target product not found in parent's children list");
             } else {
-                System.out.println("DEBUG: Target found at index " + index + ". Removing...");
+                System.out.println("DEBUG: Target found at index " + index + ". removing");
             }
             parent.remove(target);
         }
@@ -235,9 +235,9 @@ public class CommandPattern {
             System.out.println("DEBUG: Executing RemoveCategoryCommand for " + target.getName());
             index = parent.getChildren().indexOf(target);
             if (index == -1) {
-                System.out.println("DEBUG: Target category not found in parent's children list!");
+                System.out.println("DEBUG: Target category not found in parent's children list");
             } else {
-                System.out.println("DEBUG: Target found at index " + index + ". Removing...");
+                System.out.println("DEBUG: Target found at index " + index + ". removing");
             }
             parent.remove(target);
         }
@@ -277,9 +277,9 @@ public class CommandPattern {
             System.out.println("DEBUG: Executing RemoveProductTypeCommand for " + typeName);
             this.factory = factories.get(typeName.toLowerCase());
             if (this.factory == null) {
-                System.out.println("DEBUG: Factory for " + typeName + " not found in map!");
+                System.out.println("DEBUG: Factory for " + typeName + " not found in map");
             } else {
-                System.out.println("DEBUG: Factory found. Removing...");
+                System.out.println("DEBUG: Factory found, removing");
             }
             factories.remove(typeName.toLowerCase());
         }

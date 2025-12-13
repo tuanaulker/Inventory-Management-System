@@ -32,7 +32,7 @@ public class ObserverPattern {
 
         @Override
         public void showInventory() {
-            System.out.println("Inventory Manager Dashboard: Checking Inventory...");
+            System.out.println("Inventory Manager Dashboard: Checking Inventory");
         }
 
         public void executeCommand(CommandInterface cmd) {

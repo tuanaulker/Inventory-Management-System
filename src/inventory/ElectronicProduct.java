@@ -1,4 +1,3 @@
-// Yeni Dosya: ElectronicProduct.java
 package inventory;
 
 import inventory.CompositePattern.Product;

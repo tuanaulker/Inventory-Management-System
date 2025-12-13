@@ -50,20 +50,6 @@ public class CompositePattern {
             return total;
         }
 
-       /* @Override
-        public void registerObs(ObserverInterface obs) {
-            // Delegate to children or ignore? 
-            // Usually Composite doesn't hold observers for children, but for simplicity let's ignore or implement if needed.
-            // The diagram implies ProductComponent has these methods.
-            // We'll just implement empty or delegate. Let's delegate to children for bulk registration?
-            // Or maybe just leave empty as Category itself isn't observed in this specific diagram context (Product is the Subject).
-        }
-
-        @Override
-        public void removeObs(ObserverInterface obs) {
-            // See above
-        }*/
-
         @Override
         public void registerObs(ObserverInterface obs) {
             for (ProductComponent child : getChildren()) {
@@ -128,7 +114,6 @@ public class CompositePattern {
                 }
             }
         }
-
     }
 
     public static class Product implements ProductComponent {

@@ -18,10 +18,9 @@ public class Main {
             System.out.println("\n[Observer Pattern] Setting up Inventory Manager");
             InventoryManager manager = new InventoryManager();
 
-            System.out.println("\n[Composite Pattern] Organizing Hierarchy...");
+            System.out.println("\n[Composite Pattern] Organizing Hierarchy");
             ProductCategory rootCategory = initializeInventory(manager);
 
-            // Retrieve objects for demo
             Product laptop = rootCategory.findProductByName("Laptop");
             Product smartphone = rootCategory.findProductByName("Smartphone");
             Product headphones = rootCategory.findProductByName("Headphones");
@@ -31,23 +30,23 @@ public class Main {
             
             System.out.println("Total Inventory Value: $" + rootCategory.getValue());
 
-            System.out.println("\n[UPDATE FEATURE] Updating Product Details...");
+            System.out.println("\n[UPDATE FEATURE] Updating Product Details");
             if (laptop != null) {
                 laptop.setPrice(1500);
                 laptop.setThreshold(3);
             }
 
-            System.out.println("\n[SEARCH FEATURE] Finding Products...");
+            System.out.println("\n[SEARCH FEATURE] Finding Products");
             Product found = rootCategory.findProductByName("Laptop");
             if (found != null) {
-                System.out.println("✓ Found: " + found.getName() + " - Stock: " + found.getStockLevel());
+                System.out.println("Found: " + found.getName() + " - Stock: " + found.getStockLevel());
             }
 
-            System.out.println("\n[ALERT SYSTEM] Checking Low Stock...");
+            System.out.println("\n[ALERT SYSTEM] Checking Low Stock");
             List<Product> lowStock = rootCategory.getAllLowStockProducts();
             System.out.println("Products needing attention: " + lowStock.size());
 
-            System.out.println("\n[STATE PATTERN] Testing handleRestock...");
+            System.out.println("\n[STATE PATTERN] Testing handleRestock");
             if (headphones != null) {
                 System.out.println("Restocking headphones (currently " +
                         headphones.getState().getStateName() + ")...");
